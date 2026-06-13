@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resume Roaster & Optimizer</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #F7F6F3; --surface: #FFFFFF; --border: #E4E2DC; --border-md: #C8C5BC;
+      --text: #1A1916; --muted: #6B6860; --hint: #A09D97;
+      --roast: #CC3020; --roast-lt: #FEF0EE; --roast-dk: #8A1A10;
+      --optimize: #1A6B4A; --optimize-lt: #EAF5EE; --optimize-dk: #0A4A2E;
+      --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06); --shadow-lg: 0 4px 16px rgba(0,0,0,0.08);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #131210; --surface: #1E1C1A; --border: #2E2C28; --border-md: #3E3C38;
+        --text: #F0EDE8; --muted: #9E9B95; --hint: #6B6860;
+        --roast: #FF6050; --roast-lt: #2A1008; --roast-dk: #FF9080;
+        --optimize: #4DC894; --optimize-lt: #0A2018; --optimize-dk: #90E8C0;
+      }
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem 1rem; }
+    .container { max-width: 700px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 2rem; }
+    .header-icon { width: 52px; height: 52px; background: var(--roast-lt); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 24px; color: var(--roast); }
+    h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 6px; }
+    .subtitle { font-size: 15px; color: var(--muted); }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.75rem; box-shadow: var(--shadow); margin-bottom: 1rem; }
+    .section-title { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--hint); margin-bottom: 10px; }
+    .divider { height: 1px; background: var(--border); margin: 1.25rem 0; }
+    label { font-size: 13px; font-weight: 500; color: var(--muted); display: block; margin-bottom: 5px; }
+    textarea { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; color: var(--text); font-family: inherit; outline: none; transition: border-color 0.15s; resize: vertical; line-height: 1.6; min-height: 160px; }
+    textarea:focus { border-color: var(--roast); box-shadow: 0 0 0 3px color-mix(in srgb, var(--roast) 10%, transparent); }
+    textarea::placeholder { color: var(--hint); }
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .mode-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 12px; border-radius: var(--radius-md); border: 2px solid var(--border); background: var(--bg); cursor: pointer; font-family: inherit; transition: all 0.15s; text-align: center; }
+    .mode-icon { font-size: 28px; }
+    .mode-label { font-size: 14px; font-weight: 600; }
+    .mode-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
+    .mode-btn.roast.active { background: var(--roast-lt); border-color: var(--roast); }
+    .mode-btn.roast.active .mode-label { color: var(--roast); }
+    .mode-btn.optimize.active { background: var(--optimize-lt); border-color: var(--optimize); }
+    .mode-btn.optimize.active .mode-label { color: var(--optimize); }
+    .mode-btn:not(.active) { opacity: 0.65; }
+    .generate-btn { width: 100%; padding: 13px; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.15s; color: #fff; }
+    .generate-btn.roast-mode { background: var(--roast); }
+    .generate-btn.optimize-mode { background: var(--optimize); }
+    .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%; animation: spin 0.65s linear infinite; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .output-card { border-radius: var(--radius-lg); overflow: hidden; margin-top: 1rem; animation: fadeUp 0.25s ease; box-shadow: var(--shadow-lg); }
+    .output-card.roast { border: 1px solid var(--roast); }
+    .output-card.optimize { border: 1px solid var(--optimize); }
+    .output-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .output-card.roast .output-header { background: var(--roast-lt); }
+    .output-card.optimize .output-header { background: var(--optimize-lt); }
+    .output-meta { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .output-card.roast .output-meta { color: var(--roast); }
+    .output-card.optimize .output-meta { color: var(--optimize); }
+    .copy-btn { display: flex; align-items: center; gap: 5px; padding: 6px 11px; background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; color: var(--muted); cursor: pointer; font-family: inherit; }
+    .copy-btn:hover { background: var(--bg); }
+    .output-body { padding: 1.5rem; background: var(--surface); }
+    .output-text { font-size: 15px; line-height: 1.8; color: var(--text); white-space: pre-wrap; }
+    .error-box { display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px; background: var(--roast-lt); border: 1px solid color-mix(in srgb, var(--roast) 30%, transparent); border-radius: var(--radius-md); font-size: 13px; color: var(--roast); margin-top: 1rem; }
+    .example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .chip { font-size: 12px; padding: 5px 11px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; cursor: pointer; color: var(--muted); font-family: inherit; transition: all 0.15s; }
+    .chip:hover { border-color: var(--roast); color: var(--roast); }
+    @media (max-width: 500px) { .mode-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-icon"><i class="ti ti-file-cv"></i></div>
+    <h1>Resume Roaster & Optimizer</h1>
+    <p class="subtitle">Paste your resume bullets — get roasted or get hired.</p>
+  </div>
+
+  <div class="card">
+    <p class="section-title">Choose your mode</p>
+    <div class="mode-grid">
+      <button class="mode-btn roast active" id="roastBtn" onclick="setMode('roast')">
+        <span class="mode-icon">🔥</span>
+        <span class="mode-label">Roast me</span>
+        <span class="mode-desc">Brutally honest comedy — your ego won't survive this</span>
+      </button>
+      <button class="mode-btn optimize" id="optimizeBtn" onclick="setMode('optimize')">
+        <span class="mode-icon">🚀</span>
+        <span class="mode-label">Optimize me</span>
+        <span class="mode-desc">Before & after rewrites with strong action verbs & metrics</span>
+      </button>
+    </div>
+
+    <div class="divider"></div>
+    <p class="section-title">Quick examples</p>
+    <div class="example-chips">
+      <button class="chip" onclick="fillExample(0)">Weak Excel bullet</button>
+      <button class="chip" onclick="fillExample(1)">Vague teamwork</button>
+      <button class="chip" onclick="fillExample(2)">Generic responsibilities</button>
+    </div>
+
+    <label for="resumeInput">Paste your resume bullet points</label>
+    <textarea id="resumeInput" placeholder="e.g.&#10;• Did stuff with Excel and made reports&#10;• Helped team with things&#10;• Responsible for managing social media&#10;• Worked on projects and met deadlines"></textarea>
+  </div>
+
+  <button class="generate-btn roast-mode" id="genBtn" onclick="generate()">
+    🔥 &nbsp;Roast my resume
+  </button>
+
+  <div id="errorBox" style="display:none"></div>
+
+  <div id="outputCard" style="display:none">
+    <div class="output-header">
+      <div class="output-meta" id="outputMeta"></div>
+      <button class="copy-btn" onclick="copyOutput()"><i class="ti ti-copy" style="font-size:14px"></i> Copy</button>
+    </div>
+    <div class="output-body">
+      <div class="output-text" id="outputText"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let mode = 'roast';
+
+  const examples = [
+    "• Did stuff with Excel and made reports\n• Helped the team with various tasks",
+    "• Was a team player and worked well with others\n• Collaborated with colleagues on different projects",
+    "• Responsible for managing social media accounts\n• Handled customer service and resolved complaints\n• Worked on improving company processes"
+  ];
+
+  function fillExample(i) {
+    document.getElementById('resumeInput').value = examples[i];
+  }
+
+  function setMode(m) {
+    mode = m;
+    const roastBtn = document.getElementById('roastBtn');
+    const optimizeBtn = document.getElementById('optimizeBtn');
+    const genBtn = document.getElementById('genBtn');
+
+    if (m === 'roast') {
+      roastBtn.classList.add('active');
+      optimizeBtn.classList.remove('active');
+      genBtn.className = 'generate-btn roast-mode';
+      genBtn.innerHTML = '🔥 &nbsp;Roast my resume';
+    } else {
+      optimizeBtn.classList.add('active');
+      roastBtn.classList.remove('active');
+      genBtn.className = 'generate-btn optimize-mode';
+      genBtn.innerHTML = '🚀 &nbsp;Optimize my resume';
+    }
+    document.getElementById('outputCard').style.display = 'none';
+  }
+
+  async function generate() {
+    const text = document.getElementById('resumeInput').value.trim();
+    if (!text) { showError('Please paste at least one resume bullet point.'); return; }
+
+    setLoading(true);
+    document.getElementById('errorBox').style.display = 'none';
+    document.getElementById('outputCard').style.display = 'none';
+
+    const prompt = mode === 'roast'
+      ? `You are a hilariously brutally honest Fortune 500 recruiter who moonlights as a stand-up comedian. Roast these resume bullet points with savage wit. Attack the WRITING and the VAGUENESS — never the person. Be specific about what's weak. Make it funny but constructive. End with one genuine piece of advice.
+
+Resume bullets to roast:
+${text}
+
+Format: Go bullet by bullet with your roast, then end with "💡 Genuine Advice:" section.`
+      : `You are an expert Fortune 500 recruiter and resume coach. Rewrite these resume bullet points to be compelling, results-driven, and professional.
+
+For each bullet point provide:
+BEFORE: [original]
+AFTER: [improved version with strong action verb, specific detail, and implied or stated metric]
+WHY: [one sentence explaining the improvement]
+
+Resume bullets to improve:
+${text}
+
+End with a "✅ Key Principles Applied" summary of what you changed.`;
+
+    try {
+      const res = await fetch('/.netlify/functions/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1200,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+      const result = data.content.map(b => b.text || '').join('').trim();
+
+      const card = document.getElementById('outputCard');
+      card.className = `output-card ${mode}`;
+      document.getElementById('outputMeta').innerHTML = mode === 'roast'
+        ? '<i class="ti ti-flame" style="font-size:16px"></i> The Roast'
+        : '<i class="ti ti-rocket" style="font-size:16px"></i> Optimized Resume';
+      document.getElementById('outputText').textContent = result;
+      card.style.display = 'block';
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (err) {
+      showError('Error: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function setLoading(on) {
+    const btn = document.getElementById('genBtn');
+    btn.disabled = on;
+    if (on) {
+      btn.innerHTML = '<span class="spinner"></span> Processing…';
+    } else {
+      btn.innerHTML = mode === 'roast' ? '🔥 &nbsp;Roast my resume' : '🚀 &nbsp;Optimize my resume';
+    }
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.className = 'error-box';
+    box.style.display = 'flex';
+    box.innerHTML = `<i class="ti ti-alert-circle" style="font-size:16px;flex-shrink:0"></i><span>${msg}</span>`;
+  }
+
+  function copyOutput() {
+    navigator.clipboard.writeText(document.getElementById('outputText').textContent).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.innerHTML = '<i class="ti ti-check" style="font-size:14px"></i> Copied!';
+      setTimeout(() => { btn.innerHTML = '<i class="ti ti-copy" style="font-size:14px"></i> Copy'; }, 2000);
+    });
+  }
+</script>
+</body>
+</html>
